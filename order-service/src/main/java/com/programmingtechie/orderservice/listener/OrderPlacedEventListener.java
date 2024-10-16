@@ -21,20 +21,43 @@ public class OrderPlacedEventListener {
     private final KafkaTemplate<String, OrderPlacedEvent> kafkaTemplate;
     private final ObservationRegistry observationRegistry;
 
+//    @EventListener
+//    public void handleOrderPlacedEvent(OrderPlacedEvent event) {
+//        log.info("Order Placed Event Received, Sending OrderPlacedEvent to notificationTopic: {}", event.getOrderNumber());
+//
+//        // Create Observation for Kafka Template
+//        try {
+//            Observation.createNotStarted("notification-topic", this.observationRegistry).observeChecked(() -> {
+//                CompletableFuture<SendResult<String, OrderPlacedEvent>> future = kafkaTemplate.send("notificationTopic",
+//                        new OrderPlacedEvent(event.getOrderNumber()));
+//                return future.handle((result, throwable) -> CompletableFuture.completedFuture(result));
+//            }).get();
+//        } catch (InterruptedException | ExecutionException e) {
+//            Thread.currentThread().interrupt();
+//            throw new RuntimeException("Error while sending message to Kafka", e);
+//        }
+//    }
     @EventListener
     public void handleOrderPlacedEvent(OrderPlacedEvent event) {
         log.info("Order Placed Event Received, Sending OrderPlacedEvent to notificationTopic: {}", event.getOrderNumber());
 
-        // Create Observation for Kafka Template
         try {
-            Observation.createNotStarted("notification-topic", this.observationRegistry).observeChecked(() -> {
-                CompletableFuture<SendResult<String, OrderPlacedEvent>> future = kafkaTemplate.send("notificationTopic",
-                        new OrderPlacedEvent(event.getOrderNumber()));
-                return future.handle((result, throwable) -> CompletableFuture.completedFuture(result));
-            }).get();
+            // Send event to Kafka topic asynchronously
+            CompletableFuture<SendResult<String, OrderPlacedEvent>> future = kafkaTemplate.send("notificationTopic", new OrderPlacedEvent(event.getOrderNumber()));
+
+            // Handle the result of the future
+            future.handle((result, throwable) -> {
+                if (throwable != null) {
+                    log.error("Error while sending message to Kafka", throwable);
+                } else {
+                    log.info("Message sent to Kafka topic successfully: {}", result.getRecordMetadata().topic());
+                }
+                return CompletableFuture.completedFuture(result);
+            }).get();  // Block to wait for completion of the Kafka send
         } catch (InterruptedException | ExecutionException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException("Error while sending message to Kafka", e);
         }
     }
+
 }

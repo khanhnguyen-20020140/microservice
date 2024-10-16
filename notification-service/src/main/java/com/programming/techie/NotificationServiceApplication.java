@@ -23,11 +23,8 @@ public class NotificationServiceApplication {
 
     @KafkaListener(topics = "notificationTopic")
     public void handleNotification(OrderPlacedEvent orderPlacedEvent) {
-        Observation.createNotStarted("on-message", this.observationRegistry).observe(() -> {
-            log.info("Got message <{}>", orderPlacedEvent);
-            log.info("TraceId- {}, Received Notification for Order - {}", this.tracer.currentSpan().context().traceId(),
-                    orderPlacedEvent.getOrderNumber());
-        });
-        // send out an email notification
+        log.info("Got message <{}>", orderPlacedEvent);
+        log.info("TraceId- {}, Received Notification for Order - {}", this.tracer.currentSpan().context().traceId(),
+                orderPlacedEvent.getOrderNumber());
     }
 }

@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.Arrays;
@@ -30,11 +31,13 @@ public class OrderService {
     private final WebClient.Builder webClientBuilder;
     private final ObservationRegistry observationRegistry;
     private final ApplicationEventPublisher applicationEventPublisher;
-
+    private final RestTemplate restTemplate;
     public String placeOrder(OrderRequest orderRequest) {
+        // Create a new Order
         Order order = new Order();
         order.setOrderNumber(UUID.randomUUID().toString());
 
+        // Map the OrderLineItemsDtoList to OrderLineItems and set it to the order
         List<OrderLineItems> orderLineItems = orderRequest.getOrderLineItemsDtoList()
                 .stream()
                 .map(this::mapToDto)
@@ -42,37 +45,30 @@ public class OrderService {
 
         order.setOrderLineItemsList(orderLineItems);
 
+        // Extract SKU codes from the orderLineItems
         List<String> skuCodes = order.getOrderLineItemsList().stream()
                 .map(OrderLineItems::getSkuCode)
                 .toList();
 
-        // Call Inventory Service, and place order if product is in
-        // stock
-        Observation inventoryServiceObservation = Observation.createNotStarted("inventory-service-lookup",
-                this.observationRegistry);
-        inventoryServiceObservation.lowCardinalityKeyValue("call", "inventory-service");
-        return inventoryServiceObservation.observe(() -> {
-            InventoryResponse[] inventoryResponseArray = webClientBuilder.build().get()
-                    .uri("http://inventory-service/api/inventory",
-                            uriBuilder -> uriBuilder.queryParam("skuCode", skuCodes).build())
-                    .retrieve()
-                    .bodyToMono(InventoryResponse[].class)
-                    .block();
+        String url = "http://localhost:8083/api/inventory?skuCode={skuCodes}";
+        InventoryResponse[] inventoryResponseArray = restTemplate.getForObject(url, InventoryResponse[].class, String.join(",", skuCodes));
 
-            boolean allProductsInStock = Arrays.stream(inventoryResponseArray)
-                    .allMatch(InventoryResponse::isInStock);
+        // Check if all products are in stock
+        boolean allProductsInStock = Arrays.stream(inventoryResponseArray)
+                .allMatch(InventoryResponse::isInStock);
 
-            if (allProductsInStock) {
-                orderRepository.save(order);
-                // publish Order Placed Event
-                applicationEventPublisher.publishEvent(new OrderPlacedEvent(this, order.getOrderNumber()));
-                return "Order Placed";
-            } else {
-                throw new IllegalArgumentException("Product is not in stock, please try again later");
-            }
-        });
-
+        // If all products are in stock, place the order and publish an event
+        if (allProductsInStock) {
+            orderRepository.save(order);
+            // Publish Order Placed Event
+            applicationEventPublisher.publishEvent(new OrderPlacedEvent(this, order.getOrderNumber()));
+            return "Order Placed";
+        } else {
+            // Throw exception if any product is not in stock
+            throw new IllegalArgumentException("Product is not in stock, please try again later");
+        }
     }
+
 
     private OrderLineItems mapToDto(OrderLineItemsDto orderLineItemsDto) {
         OrderLineItems orderLineItems = new OrderLineItems();

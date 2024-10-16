@@ -27,7 +27,15 @@ public class OrderController {
     @Retry(name = "inventory")
     public CompletableFuture<String> placeOrder(@RequestBody OrderRequest orderRequest) {
         log.info("Placing Order");
-        return CompletableFuture.supplyAsync(() -> orderService.placeOrder(orderRequest));
+        return CompletableFuture.supplyAsync(() -> {
+            log.info("Placing order asynchronously...");
+            try {
+                return orderService.placeOrder(orderRequest);
+            } catch (Exception e) {
+                log.error("Error occurred while placing the order", e);
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     public CompletableFuture<String> fallbackMethod(OrderRequest orderRequest, RuntimeException runtimeException) {
