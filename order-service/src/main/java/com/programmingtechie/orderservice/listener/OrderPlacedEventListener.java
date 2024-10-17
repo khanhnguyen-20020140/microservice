@@ -18,7 +18,7 @@ import java.util.concurrent.ExecutionException;
 @Slf4j
 public class OrderPlacedEventListener {
 
-    private final KafkaTemplate<String, OrderPlacedEvent> kafkaTemplate;
+    private final KafkaTemplate<String, Integer> kafkaTemplate;
     private final ObservationRegistry observationRegistry;
 
 //    @EventListener
@@ -43,7 +43,7 @@ public class OrderPlacedEventListener {
 
         try {
             // Send event to Kafka topic asynchronously
-            CompletableFuture<SendResult<String, OrderPlacedEvent>> future = kafkaTemplate.send("notificationTopic", new OrderPlacedEvent(event.getOrderNumber()));
+            CompletableFuture<SendResult<String, Integer>> future = kafkaTemplate.send("notificationTopic", 123);
 
             // Handle the result of the future
             future.handle((result, throwable) -> {
