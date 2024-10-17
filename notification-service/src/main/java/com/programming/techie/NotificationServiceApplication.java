@@ -21,7 +21,7 @@ public class NotificationServiceApplication {
         SpringApplication.run(NotificationServiceApplication.class, args);
     }
 
-    @KafkaListener(topics = "notificationTopic")
+    @KafkaListener(topics = "notificationTopic_Nov_V1")
     public void handleNotification(OrderPlacedEvent orderPlacedEvent) {
         log.info("Got message <{}>", orderPlacedEvent);
         log.info("TraceId- {}, Received Notification for Order - {}", this.tracer.currentSpan().context().traceId(),
