@@ -46,19 +46,19 @@ public class KafkaConsumerConfiguration {
         return new DefaultKafkaConsumerFactory<>(config);
     }
 
-    @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, Object> kafkaListenerContainerFactory(
-            ConsumerFactory<String, Object> consumerFactory, KafkaTemplate<String, Object> kafkaTemplate) {
-
-        // Create an error handler with a dead-letter publishing recoverer
-        DefaultErrorHandler errorHandler = new DefaultErrorHandler(new DeadLetterPublishingRecoverer(kafkaTemplate));
-
-        // Create and configure the Kafka listener container factory
-        ConcurrentKafkaListenerContainerFactory<String, Object> factory = new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(consumerFactory);
-        factory.setCommonErrorHandler(errorHandler);
-
-        return factory;
-    }
+//    @Bean
+//    public ConcurrentKafkaListenerContainerFactory<String, Object> kafkaListenerContainerFactory(
+//            ConsumerFactory<String, Object> consumerFactory, KafkaTemplate<String, Object> kafkaTemplate) {
+//
+//        // Create an error handler with a dead-letter publishing recoverer
+//        DefaultErrorHandler errorHandler = new DefaultErrorHandler(new DeadLetterPublishingRecoverer(kafkaTemplate));
+//
+//        // Create and configure the Kafka listener container factory
+//        ConcurrentKafkaListenerContainerFactory<String, Object> factory = new ConcurrentKafkaListenerContainerFactory<>();
+//        factory.setConsumerFactory(consumerFactory);
+//        factory.setCommonErrorHandler(errorHandler);
+//
+//        return factory;
+//    }
 
 }

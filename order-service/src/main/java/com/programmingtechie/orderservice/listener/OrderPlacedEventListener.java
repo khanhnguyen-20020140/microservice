@@ -43,7 +43,7 @@ public class OrderPlacedEventListener {
 
         try {
             // Send event to Kafka topic asynchronously
-            CompletableFuture<SendResult<String, OrderPlacedEvent>> future = kafkaTemplate.send("notificationTopic_Nov_V1", new OrderPlacedEvent(event.getOrderNumber()));
+            CompletableFuture<SendResult<String, OrderPlacedEvent>> future = kafkaTemplate.send("notificationTopic_Nov_V9", new OrderPlacedEvent(event.getOrderNumber()));
 
             // Handle the result of the future
             future.handle((result, throwable) -> {
